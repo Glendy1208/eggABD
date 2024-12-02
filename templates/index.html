@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Big Data untuk Optimalisasi Produksi Telur</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Fullscreen Map */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+    
+        .map-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Tetapkan z-index lebih rendah dari elemen judul */
+            pointer-events: auto; /* Pastikan peta dapat menerima interaksi pengguna */
+        }
+
+    
+        /* Filter Container */
+        .filter-container {
+            position: fixed; /* Fixed position */
+            top: 100px; /* Pindahkan ke bawah untuk menghindari tombol zoom peta */
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* High z-index */
+        }
+
+        /* Title Container */
+        .title-container {
+            position: fixed; /* Fixed position */
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            z-index: 1000; /* High z-index */
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+            pointer-events: none;
+        }
+    
+        /* Graph Container */
+        .graph-container {
+            position: fixed; /* Fixed position */
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* High z-index */
+            max-width: 400px;
+            max-height: 300px;
+        }
+    
+        /* Camera Button */
+        .camera-btn {
+            position: fixed; /* Fixed position */
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            z-index: 1001; /* Higher z-index than other elements */
+        }
+    
+        /* Camera Popup */
+        .camera-popup {
+            display: none;
+            position: fixed; /* Fixed position for the pop-up */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000; /* Higher z-index than all elements */
+            justify-content: center;
+            align-items: center;
+        }
+    
+        .camera-popup .popup-content {
+            background: white;
+            width: 65%;
+            height: 65%;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Toggle Button */
+        .toggle-btn {
+            position: absolute;
+            top: 10px;
+            left: -25px;
+            width: 25px;
+            height: 25px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+        }
+
+        .toggle-btn:hover {
+            background-color: #0056b3;
+        }
+
+
+        /* Filter Container */
+        .filter-container {
+            position: fixed; /* Tetap di tempat */
+            top: 100px; /* Sesuaikan dengan jarak tombol zoom peta */
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Tetap di atas elemen peta */
+        }
+
+
+        /* Graph Container */
+        .graph-container {
+            position: fixed;
+            bottom: 20px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-width: 650px;
+            max-height: 400px;
+            transition: transform 0.3s ease; /* Animasi geser */
+        }
+
+        .graph-container.hidden {
+            transform: translateX(100%); /* Sembunyikan grafik */
+        }
+
+    </style>
+</head>
+<div>
+    <!-- Map Container -->
+    <div class="map-container">
+        {{ map_html|safe }}
+    </div>
+
+    <!-- Title -->
+    <div class="title-container">
+        <h1>Analisis Big Data untuk Optimalisasi Produksi dan Distribusi Telur</h1>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="filter-container" id="filterContainer">
+    <!-- Form Filter -->
+    <form method="get" action="/">
+        <div class="mb-3">
+            <label for="year" class="form-label">Pilih Tahun:</label>
+            <select class="form-select" name="year" id="year">
+                {% for year in years %}
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                    {{ year }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="province" class="form-label">Pilih Provinsi:</label>
+            <select class="form-select" name="province" id="province">
+                {% for province in provinces %}
+                <option value="{{ province }}" {% if province == selected_province %}selected{% endif %}>
+                    {{ province }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Tampilkan</button>
+    </form>
+</div>
+</div>
+
+
+    <!-- Graph Container -->
+    <div class="graph-container hidden" id="graphContainer">
+        <button class="toggle-btn" id="graphToggle"><<</button>
+        {% if forecast_graph %}
+        <div>
+            <h5 class="text-center">Grafik Prediksi Harga Telur</h5>
+            <img src="data:image/png;base64,{{ forecast_graph }}" alt="Grafik Prediksi Harga Telur" class="img-fluid">
+        </div>
+        {% endif %}
+    </div>
+    
+
+    <!-- Camera Button -->
+    <button class="camera-btn" onclick="toggleCameraPopup()">📷</button>
+
+    <!-- Camera Popup -->
+    <div class="camera-popup" id="cameraPopup">
+        <div class="popup-content">
+            <div class="d-flex justify-content-between align-items-center p-3 bg-primary text-white">
+                <span>Real-Time Egg Classification</span>
+                <button onclick="toggleCameraPopup()" class="btn-close btn-close-white"></button>
+            </div>
+            <div class="flex-grow-1 d-flex justify-content-center align-items-center">
+                <img id="cameraFeed" src="" alt="Camera Feed">
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Kamera Popup Toggle
+        function toggleCameraPopup() {
+            const popup = document.getElementById('cameraPopup');
+            const cameraFeed = document.getElementById('cameraFeed');
+            if (popup.style.display === 'flex') {
+                fetch('/stop_camera')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data.status);
+                        cameraFeed.src = "";
+                        popup.style.display = 'none';
+                    });
+            } else {
+                fetch('/start_camera')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data.status);
+                        cameraFeed.src = "/video_feed";
+                        popup.style.display = 'flex';
+                    });
+            }
+        }
+    
+        // Fitur Hide/Show untuk Filter dan Grafik
+        document.addEventListener('DOMContentLoaded', () => {
+            // Graph Toggle
+            const graphContainer = document.getElementById('graphContainer');
+            const graphToggle = document.getElementById('graphToggle');
+    
+            graphToggle.addEventListener('click', () => {
+                if (graphContainer.classList.contains('hidden')) {
+                    graphContainer.classList.remove('hidden');
+                    graphToggle.textContent = '>>'; // Ubah simbol saat grafik tampil
+                } else {
+                    graphContainer.classList.add('hidden');
+                    graphToggle.textContent = '<<'; // Ubah simbol saat grafik tersembunyi
+                }
+            });
+        });
+    </script>
+    
+</body>
+</html>
