@@ -89,7 +89,7 @@ coordinates_dict = {item["name"]: (item["latitude"], item["longitude"]) for item
 cluster_colors = {"Rendah": "lightgreen", "Sedang": "yellow", "Tinggi": "red"}
 
 # Load forecast data
-forecast_data_path = "data/Formatted_Forecasting_Data.csv"
+forecast_data_path = "data/forecast_data.csv"
 forecast_data = pd.read_csv(forecast_data_path)
 
 # Restructure data for forecasting
