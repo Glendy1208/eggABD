@@ -116,31 +116,37 @@ forecast_data_filtered = forecast_data_long[forecast_data_long["Year"].isin([202
 
 def generate_forecast_graph(data):
     """Generate the forecast graph and return it as a base64 image."""
-    # Aggregate data by month and year (average price per month)
+    # Agregasi data berdasarkan bulan dan tahun (rata-rata harga per bulan)
     monthly_avg_prices = data.groupby(["Year", "Month"])["Price"].mean().reset_index()
+
+    # Buat kolom baru yang menggabungkan tahun dan bulan
+    monthly_avg_prices["Date"] = monthly_avg_prices["Year"].astype(str) + "-" + monthly_avg_prices["Month"].astype(str).str.zfill(2)
+
+    # Urutkan data berdasarkan kolom Date untuk memastikan urutan bulan yang benar
+    monthly_avg_prices = monthly_avg_prices.sort_values(by="Date").reset_index(drop=True)
+
+    # Membuat label untuk grafik
     prov = data["Komoditas (Rp)"].iloc[0]
-    # Create a line plot for 2023, 2024, and 2025
+
+    # Buat grafik garis untuk seluruh periode 2023-2025
     plt.figure(figsize=(10, 5))
     sns.lineplot(
         data=monthly_avg_prices,
-        x="Month",
+        x="Date",
         y="Price",
-        hue="Year",
-        style="Year",
         markers=True,
         dashes=False
     )
 
-    # Customize the plot
+    # Sesuaikan plot
     plt.title(f"Harga Telur {prov} (2023-2025)", fontsize=16)
     plt.xlabel("Bulan", fontsize=12)
     plt.ylabel("Harga (Rp)", fontsize=12)
-    plt.xticks(ticks=range(1, 13), labels=["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"])
-    plt.legend(title="Tahun", fontsize=10)
+    plt.xticks(rotation=45)  # Rotate the x-axis labels to fit them better
     plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
 
-    # Save the plot to a buffer
+    # Simpan plot ke dalam buffer
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
     buf.seek(0)
@@ -149,7 +155,6 @@ def generate_forecast_graph(data):
     plt.close()
 
     return img_base64
-
 
 @app.route("/", methods=["GET", "POST"])
 def index():
