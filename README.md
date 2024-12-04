@@ -41,10 +41,11 @@ Pastikan Anda sudah menginstal Python 3.x di sistem Anda. Anda juga memerlukan b
     ```
 
 2. **Buat dan aktifkan virtual environment** (Opsional, namun disarankan untuk menghindari konflik dengan paket lain):
-    ```bash
-    python -m venv venv
-    Windows : source venv/bin/activate
-    ```
+    - Pengguna Windows
+        ```bash
+        python -m venv venv
+        source venv/bin/activate
+        ```
 
 3. **Install dependencies**:
     Instal semua pustaka yang dibutuhkan dengan menggunakan pip:
